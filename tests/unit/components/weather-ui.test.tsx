@@ -1,6 +1,6 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import App from '../../../src/App';
 import CurrentWeather from '../../../src/components/CurrentWeather';
 import SearchBar from '../../../src/components/SearchBar';
@@ -10,6 +10,33 @@ import LoadingState from '../../../src/components/states/LoadingState';
 import UnitToggle from '../../../src/components/UnitToggle';
 import { MOCK_WEATHER } from '../../../src/data/mockWeather';
 import { formatTemperature } from '../../../src/lib/temperature';
+import { getWeather, searchCities } from '../../../src/services/weatherService';
+
+vi.mock('../../../src/services/weatherService', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../../src/services/weatherService')>();
+  return {
+    ...actual,
+    getWeather: vi.fn(),
+    searchCities: vi.fn(),
+  };
+});
+
+const searchCitiesMock = vi.mocked(searchCities);
+const getWeatherMock = vi.mocked(getWeather);
+
+beforeEach(() => {
+  vi.resetAllMocks();
+  searchCitiesMock.mockResolvedValue([MOCK_WEATHER.city]);
+  getWeatherMock.mockResolvedValue(MOCK_WEATHER);
+});
+
+async function loadAppWeather(user: ReturnType<typeof userEvent.setup>) {
+  await user.type(screen.getByRole('searchbox', { name: 'Nome da cidade' }), 'Seattle');
+  await user.click(screen.getByRole('button', { name: 'Buscar cidade' }));
+  await waitFor(() =>
+    expect(screen.getByRole('heading', { name: 'Previsão de 5 dias' })).toBeVisible(),
+  );
+}
 
 describe('SearchBar', () => {
   it('envia a cidade sem espaços extras', async () => {
@@ -36,6 +63,13 @@ describe('SearchBar', () => {
 });
 
 describe('weather display', () => {
+  it('starts in the idle state and prompts for a city', () => {
+    render(<App />);
+
+    expect(screen.getByRole('status')).toHaveTextContent('Busque uma cidade');
+    expect(searchCitiesMock).not.toHaveBeenCalled();
+  });
+
   it('marca a unidade ativa e permite alterá-la pelo teclado', () => {
     const onChange = vi.fn();
 
@@ -51,6 +85,7 @@ describe('weather display', () => {
     const user = userEvent.setup();
 
     render(<App />);
+    await loadAppWeather(user);
     expect(screen.getByText('18°C')).toBeInTheDocument();
     expect(screen.getAllByText('20°C').length).toBeGreaterThan(0);
 
@@ -60,8 +95,25 @@ describe('weather display', () => {
     expect(screen.getAllByText('68°F').length).toBeGreaterThan(0);
   });
 
-  it('mostra cinco dias e campos meteorológicos da fixture', () => {
+  it('converte 0°C para 32°F sem repetir a consulta meteorológica', async () => {
+    const user = userEvent.setup();
+    getWeatherMock.mockResolvedValueOnce({
+      ...MOCK_WEATHER,
+      current: { ...MOCK_WEATHER.current!, temperatureC: 0 },
+    });
+
     render(<App />);
+    await loadAppWeather(user);
+    await user.click(screen.getByRole('button', { name: 'Fahrenheit' }));
+
+    expect(screen.getByText('32°F')).toBeInTheDocument();
+    expect(getWeatherMock).toHaveBeenCalledOnce();
+  });
+
+  it('mostra cinco dias e campos meteorológicos da fixture', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await loadAppWeather(user);
 
     expect(screen.getByRole('heading', { name: 'Previsão de 5 dias' })).toBeInTheDocument();
     expect(screen.getAllByRole('article')).toHaveLength(5);

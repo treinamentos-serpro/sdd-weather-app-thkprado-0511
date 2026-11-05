@@ -79,9 +79,9 @@ pnpm test:coverage
 
 ## Checklist do módulo
 
-- [ ] Conversão de unidade testada
-- [ ] Libs (codes/format) testadas
-- [ ] Service testado com mock (sucesso + erro)
-- [ ] Componentes testados (incl. conversão na UI)
-- [ ] E2E do fluxo principal + mobile + vazio
-- [ ] Edge cases cobertos
+- [x] Conversão de unidade testada
+- [x] Libs (codes/format) testadas
+- [x] Service testado com mock (sucesso + erro)
+- [x] Componentes testados (incl. conversão na UI)
+- [x] E2E do fluxo principal + mobile + vazio
+- [x] Edge cases cobertos

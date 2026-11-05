@@ -6,22 +6,12 @@ import EmptyState from './components/states/EmptyState';
 import ErrorState from './components/states/ErrorState';
 import LoadingState from './components/states/LoadingState';
 import UnitToggle from './components/UnitToggle';
-import { MOCK_WEATHER } from './data/mockWeather';
+import { useWeather } from './hooks/useWeather';
 import type { Unit } from './types/weather';
-
-type AppStatus = 'idle' | 'loading' | 'empty' | 'error' | 'success';
 
 export default function App() {
   const [unit, setUnit] = useState<Unit>('celsius');
-  const [status, setStatus] = useState<AppStatus>('success');
-
-  function handleSearch(city: string) {
-    setStatus(
-      city.toLocaleLowerCase('pt-BR') === MOCK_WEATHER.city.name.toLocaleLowerCase('pt-BR')
-        ? 'success'
-        : 'empty',
-    );
-  }
+  const { status, data, error, search, retry } = useWeather();
 
   return (
     <main className="min-h-screen bg-night-900 px-4 py-6 text-white sm:px-6 sm:py-10">
@@ -40,7 +30,7 @@ export default function App() {
             </span>
           </a>
           <div className="flex w-full flex-col gap-3 sm:max-w-xl sm:flex-row sm:items-start">
-            <SearchBar onSearch={handleSearch} disabled={status === 'loading'} />
+            <SearchBar onSearch={search} disabled={status === 'loading'} />
             <UnitToggle unit={unit} onChange={setUnit} />
           </div>
         </header>
@@ -56,19 +46,14 @@ export default function App() {
           {status === 'empty' && <EmptyState />}
           {status === 'error' && (
             <ErrorState
-              message="Ocorreu um problema ao consultar a cidade."
-              onRetry={() => setStatus('success')}
+              message={error ?? 'Ocorreu um problema ao consultar a cidade.'}
+              onRetry={retry}
             />
           )}
-          {status === 'success' && MOCK_WEATHER.current && (
+          {status === 'success' && data?.current && data.forecast && (
             <>
-              <CurrentWeather city={MOCK_WEATHER.city} current={MOCK_WEATHER.current} unit={unit} />
-              {MOCK_WEATHER.forecast && (
-                <ForecastList forecast={MOCK_WEATHER.forecast} unit={unit} />
-              )}
-              <p className="text-center text-xs text-slate-500">
-                Dados de exemplo para demonstração da interface
-              </p>
+              <CurrentWeather city={data.city} current={data.current} unit={unit} />
+              <ForecastList forecast={data.forecast} unit={unit} />
             </>
           )}
         </div>

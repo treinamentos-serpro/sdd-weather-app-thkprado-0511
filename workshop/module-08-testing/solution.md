@@ -1,17 +1,16 @@
-# Solução de referência — (Testing)
+# Solução de referência — Testing
 
-A suíte completa está no repositório. **21 testes unitários** + **3 testes E2E**
-(rodando em chromium e mobile) passam.
+A suíte inclui **38 testes unitários** e três cenários E2E determinísticos,
+executados nos projetos Chromium e mobile do Playwright (seis execuções).
 
 ## Arquivos de referência
 
 - [`tests/unit/temperature.test.ts`](../../tests/unit/temperature.test.ts)
-- [`tests/unit/weatherCodes.test.ts`](../../tests/unit/weatherCodes.test.ts)
+- [`tests/unit/weatherCode.test.ts`](../../tests/unit/weatherCode.test.ts)
 - [`tests/unit/format.test.ts`](../../tests/unit/format.test.ts)
-- [`tests/unit/weatherService.test.ts`](../../tests/unit/weatherService.test.ts)
-- [`tests/unit/SearchBar.test.tsx`](../../tests/unit/SearchBar.test.tsx)
-- [`tests/unit/UnitToggle.test.tsx`](../../tests/unit/UnitToggle.test.tsx)
-- [`tests/unit/App.test.tsx`](../../tests/unit/App.test.tsx)
+- [`tests/unit/services/weatherService.test.ts`](../../tests/unit/services/weatherService.test.ts)
+- [`tests/unit/hooks/useWeather.test.ts`](../../tests/unit/hooks/useWeather.test.ts)
+- [`tests/unit/components/weather-ui.test.tsx`](../../tests/unit/components/weather-ui.test.tsx)
 - [`tests/e2e/weather.spec.ts`](../../tests/e2e/weather.spec.ts)
 
 ## Padrões aplicados
@@ -24,7 +23,10 @@ A suíte completa está no repositório. **21 testes unitários** + **3 testes E
   e `'**/api.open-meteo.com/**'` retornando fixtures.
 - **Conversão verificável:** temperatura mock de 0°C facilita assertar 32°F.
 - **Cobertura de edge cases:** input vazio, sem resultados, resposta não-ok e
-  resposta incompleta.
+  resposta incompleta ou parcial; valores meteorológicos ausentes permanecem
+  `null` no service e são exibidos como “—”.
+- **Estabilidade E2E:** as rotas de geocoding e forecast são interceptadas, e a
+  troca de unidade confirma que nenhuma consulta adicional é feita.
 
 ## Comandos
 
@@ -34,11 +36,12 @@ pnpm test:coverage   # cobertura
 pnpm test:e2e        # E2E (Playwright)
 ```
 
-## Resultado esperado
+## Resultado validado
 
 ```text
-Test Files  7 passed (7)
-     Tests  21 passed (21)
+Test Files  6 passed (6)
+     Tests  38 passed (38)
 
-3 passed   (Playwright: fluxo, vazio, mobile)
+6 passed   (Playwright: 3 cenários em Chromium e mobile)
+Lines      92.77% (Vitest coverage)
 ```
