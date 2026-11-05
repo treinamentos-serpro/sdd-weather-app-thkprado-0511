@@ -83,9 +83,9 @@ pnpm test:e2e
 
 ## Checklist do módulo
 
-- [ ] A11y: teclado, foco, roles/labels, contraste
-- [ ] Resiliência: timeout, retry, sem travar
-- [ ] Respostas parciais tratadas
-- [ ] Edge cases com teste
-- [ ] Melhorias de performance/UX
-- [ ] Checklist completo verde
+- [x] A11y: teclado, foco, roles/labels, contraste
+- [x] Resiliência: timeout, retry, sem travar
+- [x] Respostas parciais tratadas
+- [x] Edge cases com teste
+- [x] Melhorias de performance/UX
+- [x] Checklist completo verde

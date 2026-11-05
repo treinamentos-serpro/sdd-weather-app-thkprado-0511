@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import CurrentWeather from './components/CurrentWeather';
 import ForecastList from './components/ForecastList';
 import SearchBar from './components/SearchBar';
@@ -12,6 +12,13 @@ import type { Unit } from './types/weather';
 export default function App() {
   const [unit, setUnit] = useState<Unit>('celsius');
   const { status, data, error, search, retry } = useWeather();
+  const resultHeadingRef = useRef<HTMLHeadingElement>(null);
+
+  useEffect(() => {
+    if (status === 'success') {
+      resultHeadingRef.current?.focus();
+    }
+  }, [status]);
 
   return (
     <main className="min-h-screen bg-night-900 px-4 py-6 text-white sm:px-6 sm:py-10">
@@ -52,7 +59,12 @@ export default function App() {
           )}
           {status === 'success' && data?.current && data.forecast && (
             <>
-              <CurrentWeather city={data.city} current={data.current} unit={unit} />
+              <CurrentWeather
+                city={data.city}
+                current={data.current}
+                unit={unit}
+                titleRef={resultHeadingRef}
+              />
               <ForecastList forecast={data.forecast} unit={unit} />
             </>
           )}

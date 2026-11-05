@@ -23,7 +23,13 @@ export default function SearchBar({ onSearch, disabled = false }: SearchBarProps
   }
 
   return (
-    <form role="search" aria-label="Buscar cidade" onSubmit={handleSubmit} className="w-full">
+    <form
+      role="search"
+      aria-label="Buscar cidade"
+      aria-busy={disabled}
+      onSubmit={handleSubmit}
+      className="w-full"
+    >
       <label htmlFor="city-search" className="sr-only">
         Nome da cidade
       </label>
@@ -44,7 +50,7 @@ export default function SearchBar({ onSearch, disabled = false }: SearchBarProps
           type="submit"
           aria-label="Buscar cidade"
           disabled={disabled}
-          className="rounded-xl bg-accent-500 px-4 py-3 font-semibold text-white transition-colors hover:bg-accent-600 focus:outline-none focus:ring-2 focus:ring-accent-400 focus:ring-offset-2 focus:ring-offset-night-900 disabled:cursor-not-allowed disabled:opacity-60"
+          className="rounded-xl bg-accent-500 px-4 py-3 font-semibold text-night-900 transition-colors hover:bg-accent-600 focus:outline-none focus:ring-2 focus:ring-accent-400 focus:ring-offset-2 focus:ring-offset-night-900 disabled:cursor-not-allowed disabled:opacity-60"
         >
           <span className="sm:hidden">Buscar</span>
           <span className="hidden sm:inline">Buscar</span>

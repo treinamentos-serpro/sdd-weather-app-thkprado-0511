@@ -33,7 +33,7 @@ export default function UnitToggle({ unit, onChange }: UnitToggleProps) {
             onClick={() => onChange(option)}
             onKeyDown={handleKeyDown}
             className={`min-w-11 rounded-lg px-3 py-2 font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-accent-400 ${
-              isSelected ? 'bg-accent-500 text-white' : 'text-slate-300 hover:bg-white/10'
+              isSelected ? 'bg-accent-500 text-night-900' : 'text-slate-300 hover:bg-white/10'
             }`}
           >
             {label}

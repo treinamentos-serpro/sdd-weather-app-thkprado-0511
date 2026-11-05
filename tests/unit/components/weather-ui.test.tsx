@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import App from '../../../src/App';
@@ -11,6 +11,7 @@ import UnitToggle from '../../../src/components/UnitToggle';
 import { MOCK_WEATHER } from '../../../src/data/mockWeather';
 import { formatTemperature } from '../../../src/lib/temperature';
 import { getWeather, searchCities } from '../../../src/services/weatherService';
+import type { City } from '../../../src/types/weather';
 
 vi.mock('../../../src/services/weatherService', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../../src/services/weatherService')>();
@@ -59,6 +60,40 @@ describe('SearchBar', () => {
 
     expect(onSearch).not.toHaveBeenCalled();
     expect(screen.getByRole('alert')).toHaveTextContent('Digite o nome de uma cidade');
+  });
+
+  it('does not send a query containing only spaces', async () => {
+    const user = userEvent.setup();
+    const onSearch = vi.fn();
+
+    render(<SearchBar onSearch={onSearch} />);
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Nome da cidade' }), {
+      target: { value: '   ' },
+    });
+    await user.click(screen.getByRole('button', { name: 'Buscar cidade' }));
+
+    expect(onSearch).not.toHaveBeenCalled();
+    expect(screen.getByRole('alert')).toHaveTextContent('Digite o nome de uma cidade');
+  });
+
+  it('supports submitting the search form with Enter', async () => {
+    const user = userEvent.setup();
+    const onSearch = vi.fn();
+
+    render(<SearchBar onSearch={onSearch} />);
+    await user.type(screen.getByRole('searchbox', { name: 'Nome da cidade' }), 'Seattle');
+    await user.keyboard('{Enter}');
+
+    expect(onSearch).toHaveBeenCalledWith('Seattle');
+  });
+
+  it('exposes the search form busy state while disabled', () => {
+    render(<SearchBar onSearch={vi.fn()} disabled />);
+
+    expect(screen.getByRole('search', { name: 'Buscar cidade' })).toHaveAttribute(
+      'aria-busy',
+      'true',
+    );
   });
 });
 
@@ -121,6 +156,26 @@ describe('weather display', () => {
     expect(screen.getByText('80 %')).toBeInTheDocument();
   });
 
+  it('keeps partial weather data readable without displaying undefined or NaN', async () => {
+    getWeatherMock.mockResolvedValueOnce({
+      ...MOCK_WEATHER,
+      current: { ...MOCK_WEATHER.current!, temperatureC: null, humidityPercent: null },
+      forecast: MOCK_WEATHER.forecast!.map((day) => ({
+        ...day,
+        minTemperatureC: null,
+        maxTemperatureC: null,
+        precipitationProbabilityPercent: null,
+      })),
+    });
+    const user = userEvent.setup();
+
+    render(<App />);
+    await loadAppWeather(user);
+
+    expect(screen.getAllByText('—').length).toBeGreaterThan(0);
+    expect(document.body.textContent).not.toMatch(/undefined|NaN/);
+  });
+
   it('formata valores indisponíveis e conversões padrão', () => {
     expect(formatTemperature(null, 'celsius')).toBe('—');
     expect(formatTemperature(0, 'fahrenheit')).toBe('32°F');
@@ -157,5 +212,36 @@ describe('current weather', () => {
 
     expect(screen.getByText('Umidade')).toBeInTheDocument();
     expect(screen.getByText('—')).toBeInTheDocument();
+  });
+
+  it('marks loading busy and focuses the result after a successful search', async () => {
+    let resolveCities!: (cities: City[]) => void;
+    searchCitiesMock.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveCities = resolve;
+        }),
+    );
+    const user = userEvent.setup();
+
+    render(<App />);
+    await user.type(screen.getByRole('searchbox', { name: 'Nome da cidade' }), 'Seattle');
+    await user.click(screen.getByRole('button', { name: 'Buscar cidade' }));
+
+    expect(screen.getByRole('search', { name: 'Buscar cidade' })).toHaveAttribute(
+      'aria-busy',
+      'true',
+    );
+
+    await act(async () => {
+      resolveCities([MOCK_WEATHER.city]);
+    });
+
+    const resultHeading = await screen.findByRole('heading', { name: 'Seattle' });
+    expect(resultHeading).toHaveFocus();
+    expect(screen.getByRole('search', { name: 'Buscar cidade' })).toHaveAttribute(
+      'aria-busy',
+      'false',
+    );
   });
 });

@@ -86,8 +86,46 @@ test('mostra o estado vazio quando a busca não encontra cidades', async ({ page
   await expect(page.getByRole('status')).toContainText('Nenhuma cidade encontrada');
 });
 
+test('recupera-se de uma falha de rede ao tentar novamente', async ({ page }) => {
+  let geocodingRequests = 0;
+  await page.route('**/geocoding-api.open-meteo.com/v1/search**', async (route) => {
+    geocodingRequests += 1;
+    if (geocodingRequests === 1) {
+      await route.abort('failed');
+      return;
+    }
+
+    await route.fulfill({ json: { results: [city] } });
+  });
+  await page.route('**/api.open-meteo.com/v1/forecast**', async (route) => {
+    await route.fulfill({ json: forecast });
+  });
+
+  await page.goto('/');
+  await searchSeattle(page);
+  await expect(page.getByRole('alert')).toContainText('Falha de rede.');
+
+  await page.getByRole('button', { name: 'Tentar novamente' }).click();
+  await expect(page.getByRole('heading', { name: 'Seattle' })).toBeVisible();
+  expect(geocodingRequests).toBe(2);
+});
+
+test('supports keyboard search and moves focus to the weather result', async ({ page }) => {
+  await mockWeatherApi(page);
+  await page.goto('/');
+
+  await page.keyboard.press('Tab');
+  await page.keyboard.press('Tab');
+  const search = page.getByRole('searchbox', { name: 'Nome da cidade' });
+  await expect(search).toBeFocused();
+  await page.keyboard.type('Seattle');
+  await page.keyboard.press('Enter');
+
+  await expect(page.getByRole('heading', { name: 'Seattle' })).toBeFocused();
+});
+
 test('permite completar a busca em viewport mobile sem rolagem horizontal', async ({ page }) => {
-  await page.setViewportSize({ width: 375, height: 812 });
+  await page.setViewportSize({ width: 320, height: 812 });
   await mockWeatherApi(page);
 
   await page.goto('/');

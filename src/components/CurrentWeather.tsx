@@ -1,3 +1,4 @@
+import type { Ref } from 'react';
 import { formatTemperature } from '../lib/temperature';
 import { getWeatherPresentation } from '../lib/weatherCode';
 import type { City, CurrentWeather as CurrentWeatherData, Unit } from '../types/weather';
@@ -6,9 +7,10 @@ interface CurrentWeatherProps {
   city: City;
   current: CurrentWeatherData;
   unit: Unit;
+  titleRef?: Ref<HTMLHeadingElement>;
 }
 
-export default function CurrentWeather({ city, current, unit }: CurrentWeatherProps) {
+export default function CurrentWeather({ city, current, unit, titleRef }: CurrentWeatherProps) {
   const weather = getWeatherPresentation(current.weatherCode, current.condition);
   const location = [city.region, city.country].filter(Boolean).join(', ');
   const metrics = [
@@ -28,7 +30,12 @@ export default function CurrentWeather({ city, current, unit }: CurrentWeatherPr
           <p className="text-sm font-medium uppercase tracking-[0.18em] text-accent-400">
             Clima atual
           </p>
-          <h2 id="current-weather-title" className="mt-2 text-2xl font-bold text-white sm:text-3xl">
+          <h2
+            id="current-weather-title"
+            ref={titleRef}
+            tabIndex={-1}
+            className="mt-2 rounded-sm text-2xl font-bold text-white focus:outline-none focus:ring-2 focus:ring-accent-400 focus:ring-offset-4 focus:ring-offset-night-900 sm:text-3xl"
+          >
             {city.name}
           </h2>
           {location && <p className="mt-1 text-slate-300">{location}</p>}

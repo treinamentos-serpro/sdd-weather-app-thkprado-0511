@@ -74,6 +74,16 @@ describe('searchCities', () => {
     expect(url.searchParams.get('language')).toBe('pt');
   });
 
+  it('treats punctuation and special characters as plain search text', async () => {
+    const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(response({ results: [] }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await searchCities('São Paulo & Centro/1');
+
+    const url = new URL(String(fetchMock.mock.calls[0][0]));
+    expect(url.searchParams.get('name')).toBe('São Paulo & Centro/1');
+  });
+
   it('returns an empty result when the response has no results array', async () => {
     const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(response({}));
     vi.stubGlobal('fetch', fetchMock);
@@ -134,7 +144,7 @@ describe('searchCities', () => {
       name: 'WeatherServiceError',
       message: 'A requisição demorou demais.',
     });
-    await vi.advanceTimersByTimeAsync(10_000);
+    await vi.advanceTimersByTimeAsync(8_000);
 
     await timeoutAssertion;
   });
@@ -254,6 +264,31 @@ describe('getWeather', () => {
     expect(weather.forecast?.[1]).toMatchObject({
       maxTemperatureC: null,
       minTemperatureC: null,
+    });
+  });
+
+  it('reports an error when the response contains no usable weather data', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn<typeof fetch>().mockResolvedValue(
+        response({
+          current: {},
+          daily: {
+            time: [
+              '2026-11-05',
+              '2026-11-06',
+              '2026-11-07',
+              '2026-11-08',
+              '2026-11-09',
+            ],
+          },
+        }),
+      ),
+    );
+
+    await expect(getWeather(city)).rejects.toMatchObject({
+      name: 'WeatherServiceError',
+      message: 'O serviço de clima não retornou dados disponíveis.',
     });
   });
 });

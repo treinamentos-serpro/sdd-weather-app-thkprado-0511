@@ -3,7 +3,7 @@ import type { City, CurrentWeather, ForecastDay, WeatherData } from '../types/we
 
 const GEOCODING_URL = 'https://geocoding-api.open-meteo.com/v1/search';
 const FORECAST_URL = 'https://api.open-meteo.com/v1/forecast';
-const REQUEST_TIMEOUT_MS = 10_000;
+const REQUEST_TIMEOUT_MS = 8_000;
 
 export class WeatherServiceError extends Error {
   constructor(message: string) {
@@ -191,10 +191,32 @@ export async function getWeather(city: City): Promise<WeatherData> {
   }
 
   const forecast = dates.slice(0, 5).map((date, index) => mapForecastDay(daily, index, date));
+  const currentWeather = mapCurrentWeather(current);
+  const hasUsableCurrentData = [
+    currentWeather.temperatureC,
+    currentWeather.weatherCode,
+    currentWeather.humidityPercent,
+    currentWeather.windSpeedKmh,
+    currentWeather.pressureHpa,
+    currentWeather.precipitationMm,
+  ].some((value) => value !== null);
+  const hasUsableForecastData = forecast.some((day) =>
+    [
+      day.minTemperatureC,
+      day.maxTemperatureC,
+      day.weatherCode,
+      day.precipitationMm,
+      day.precipitationProbabilityPercent ?? null,
+    ].some((value) => value !== null),
+  );
+
+  if (!hasUsableCurrentData && !hasUsableForecastData) {
+    throw new WeatherServiceError('O serviço de clima não retornou dados disponíveis.');
+  }
 
   return {
     city,
-    current: mapCurrentWeather(current),
+    current: currentWeather,
     forecast,
     timezone: typeof payload.timezone === 'string' ? payload.timezone : null,
   };
