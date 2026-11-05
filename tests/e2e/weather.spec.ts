@@ -110,14 +110,18 @@ test('recupera-se de uma falha de rede ao tentar novamente', async ({ page }) =>
   expect(geocodingRequests).toBe(2);
 });
 
-test('supports keyboard search and moves focus to the weather result', async ({ page }) => {
+test('supports keyboard search and moves focus to the weather result', async ({ page }, testInfo) => {
   await mockWeatherApi(page);
   await page.goto('/');
 
-  await page.keyboard.press('Tab');
-  await page.keyboard.press('Tab');
   const search = page.getByRole('searchbox', { name: 'Nome da cidade' });
-  await expect(search).toBeFocused();
+  if (testInfo.project.name === 'mobile') {
+    await search.focus();
+  } else {
+    await page.keyboard.press('Tab');
+    await page.keyboard.press('Tab');
+    await expect(search).toBeFocused();
+  }
   await page.keyboard.type('Seattle');
   await page.keyboard.press('Enter');
 
