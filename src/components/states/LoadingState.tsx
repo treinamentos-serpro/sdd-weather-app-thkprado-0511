@@ -1,12 +1,17 @@
-/** Indicador de carregamento acessível. */
-export default function LoadingState() {
+interface LoadingStateProps {
+  message?: string;
+}
+
+export default function LoadingState({
+  message = 'Carregando previsão do tempo...',
+}: LoadingStateProps) {
   return (
-    <div role="status" aria-live="polite" className="flex flex-col items-center gap-3 py-16">
+    <div role="status" aria-live="polite" className="flex items-center gap-3 py-8 text-slate-200">
       <span
         aria-hidden="true"
-        className="h-10 w-10 animate-spin rounded-full border-4 border-white/20 border-t-accent-500"
+        className="h-5 w-5 animate-spin rounded-full border-2 border-accent-400 border-t-transparent"
       />
-      <p className="text-white/60">Carregando o clima…</p>
+      <span>{message}</span>
     </div>
   );
 }
